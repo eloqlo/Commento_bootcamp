@@ -22,6 +22,7 @@
 ② MX_GPIO/DMA/ADC/CAN/I2C/SPI/UART 초기화
 ③ HAL_CAN_Start() / HAL_CAN_ActivateNotification() 활성화 (수신 인터럽트 준비)
 ④ SPI EEPROM → EEPROM_ReadDTC() 호출 (이전 DTC 복구)
+
 ⑤ FreeRTOS osKernelInitialize()
 ⑥ FreeRTOS Mutex 생성 (CommMutexHandleHandle)
 ⑦ FreeRTOS Queue 생성 (CanQueueHandle)
@@ -32,6 +33,7 @@
     - SPITask: EEPROM에 DTC 주기적 백업
     - CANTask: CAN 수신 데이터 Queue 처리 → OBD2/UDS 명령 응답
     - UARTTask: 상태 출력 디버깅
+
 ⑪ UV Fault 감지 시 DTC 활성화 → EEPROM 기록
 ⑫ OBD2, UDS CAN 진단 요청 시 현재 DTC 응답
 ====================================================================================*/
@@ -832,6 +834,7 @@ void EEPROM_ReadDTC(void) {
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_SET);
 }
 
+
 // --- CAN 수신 인터럽트 콜백 ---
 CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
@@ -840,25 +843,29 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   osMessageQueuePut(CanQueueHandle, RxData, 0, 0);
 }
 
+
 // --- OBD2/UDS 응답 처리 ---
 void Process_CAN_Response(uint8_t *data) {
   CAN_TxHeaderTypeDef TxHeader;
   uint32_t TxMailbox;
   uint8_t TxData[8] = {0};
 
-  TxHeader.StdId = 0x7E8; // 응답 ID
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 8;
+  TxHeader.StdId = 0x7E8;           // 응답 ID
+  TxHeader.IDE = CAN_ID_STD;     // 메시지 ID
+  TxHeader.RTR = CAN_RTR_DATA;   // 메시지 Frame
+  TxHeader.DLC = 8;              // frame 길이
 
   // OBD2 0x43: Read DTCs
   if (data[1] == 0x43) {
     if (DTC_Table.active) {
-      TxData[0] = 0x03; TxData[1] = 0x43;
+      TxData[0] = 0x03; 
+      TxData[1] = 0x43;
       TxData[2] = (DTC_Table.DTC_Code >> 8) & 0xFF;
       TxData[3] = DTC_Table.DTC_Code & 0xFF;
     } else {
-      TxData[0] = 0x01; TxData[1] = 0x43; TxData[2] = 0x00;
+      TxData[0] = 0x01; 
+      TxData[1] = 0x43; 
+      TxData[2] = 0x00;
     }
   }
   // OBD2 0x04: Clear DTCs
@@ -891,6 +898,17 @@ void Process_CAN_Response(uint8_t *data) {
   HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 }
 /* USER CODE END PFP */
+
+
+
+
+
+
+
+
+
+
+
 
 /* USER CODE BEGIN 5 */
 void StartI2CTask(void *argument) {

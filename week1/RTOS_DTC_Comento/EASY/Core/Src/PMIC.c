@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // PMIC INITIALIZATION
 
-// (Default Setting According to Datasheet)
+// Datasheet 를 참조한 Default Setting
 PMIC_Handler pmic_handler = {
 		1,1,1,1,	// ENABLE A, B, C, D
 		0,0,0,1, 	// V_SELECT A, B, C, D

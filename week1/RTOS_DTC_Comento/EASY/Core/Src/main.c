@@ -36,21 +36,29 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+// EEPROM CMD
 #define EEPROM_CMD_WREN 0x06
 #define EEPROM_CMD_WRITE 0x02
 #define EEPROM_CMD_READ 0x03
+
+// EEPROM DTC Addresses
 #define EEPROM_DTC_ADDR_UV_A 0x0000
 #define EEPROM_DTC_ADDR_OV_A ((uint16_t)(0x0000 + 55*1))
 #define EEPROM_DTC_ADDR_OC_A ((uint16_t)(0x0000 + 55*2))
+
 #define EEPROM_DTC_ADDR_UV_B ((uint16_t)(0x0000 + 55*3))
 #define EEPROM_DTC_ADDR_OV_B ((uint16_t)(0x0000 + 55*4))
 #define EEPROM_DTC_ADDR_OC_B ((uint16_t)(0x0000 + 55*5))
+
 #define EEPROM_DTC_ADDR_UV_C ((uint16_t)(0x0000 + 55*6))
 #define EEPROM_DTC_ADDR_OV_C ((uint16_t)(0x0000 + 55*7))
 #define EEPROM_DTC_ADDR_OC_C ((uint16_t)(0x0000 + 55*8))
+
 #define EEPROM_DTC_ADDR_UV_D ((uint16_t)(0x0000 + 55*9))
 #define EEPROM_DTC_ADDR_OV_D ((uint16_t)(0x0000 + 55*10))
 #define EEPROM_DTC_ADDR_OC_D ((uint16_t)(0x0000 + 55*11))
+
 #define EEPROM_DTC_ADDR_TEMP ((uint16_t)(0x0000 + 55*12))
 
 /* USER CODE END PD */
@@ -130,16 +138,20 @@ UART_HandleTypeDef huart4;
 DTC_Table_t DTC_Table_UV_A = { 0x0000, "Brake BuckA Under Voltage Fault", 0};
 DTC_Table_t DTC_Table_OV_A = { 0x0001, "Brake BuckA Over Voltage Fault", 0};
 DTC_Table_t DTC_Table_OC_A = { 0x0002, "Brake BuckA Over Current Fault", 0};
+
 DTC_Table_t DTC_Table_UV_B = { 0x0003, "Brake BuckB Under Voltage Fault", 0};
 DTC_Table_t DTC_Table_OV_B = { 0x0004, "Brake BuckB Over Voltage Fault", 0};
 DTC_Table_t DTC_Table_OC_B = { 0x0005, "Brake BuckB Over Current Fault", 0};
+
 DTC_Table_t DTC_Table_UV_C = { 0x0006, "Brake BuckC Under Voltage Fault", 0};
 DTC_Table_t DTC_Table_OV_C = { 0x0007, "Brake BuckC Over Voltage Fault", 0};
 DTC_Table_t DTC_Table_OC_C = { 0x0008, "Brake BuckC Over Current Fault", 0};
+
 DTC_Table_t DTC_Table_UV_D = { 0x0006, "Brake BuckC Under Voltage Fault", 0};
 DTC_Table_t DTC_Table_OV_D = { 0x0007, "Brake BuckC Over Voltage Fault", 0};
 DTC_Table_t DTC_Table_OC_D = { 0x0008, "Brake BuckC Over Current Fault", 0};
 DTC_Table_t DTC_Table_TEMP = { 0x0009, "Brake High Temperature Fault", 0};
+
 
 uint8_t pmic_read_fault_flag = 1;
 uint8_t eeprom_read_dtc_flag = 0;
@@ -212,11 +224,12 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
-  // CAN 초기화 후 수신 인터럽트 활성화
-  HAL_CAN_Start(&hcan1);
-  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+//  // CAN 초기화 후 수신 인터럽트 활성화
+//  HAL_CAN_Start(&hcan1);
+//  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
   PMIC_Init();			// PMIC 전원 켜기 + PMIC 벅 켜기 + 벅 레귤레이터 출력전압 컨트롤
+
   EEPROM_ReadDTC_DMA(DTC_Table_UV_A, EEPROM_DTC_ADDR_UV_A);		// 부팅 이전에 저장된 DTC 정보 복구
   EEPROM_ReadDTC_DMA(DTC_Table_UV_B, EEPROM_DTC_ADDR_UV_B);
   EEPROM_ReadDTC_DMA(DTC_Table_UV_C, EEPROM_DTC_ADDR_UV_C);
@@ -275,9 +288,9 @@ int main(void)
 	  if (can_transmit_dtc_flag == 1){
 		  can_transmit_dtc_flag = 0;
 
-		  // TODO CAN Trasnmitter 로 DTC들 송출.
+		  // TODO [1] CAN Trasnmitter 로 DTC들 송출.
 
-		  // TODO CAN Interrupt Callback에서 uart_transmit_flag SET 하기.
+		  // TODO [2] CAN Interrupt Callback에서 uart_transmit_flag SET 하기.
 
 	  }
 

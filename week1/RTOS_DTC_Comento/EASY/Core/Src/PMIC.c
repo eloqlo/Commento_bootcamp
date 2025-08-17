@@ -16,12 +16,18 @@
 
 // Datasheet 를 참조한 Default Setting
 PMIC_Handler pmic_handler = {
-		1,1,1,1,	// ENABLE A, B, C, D
-		0,0,0,1, 	// V_SELECT A, B, C, D
-		0b1000100110,	// Vref A
-		0b1000100110,	// Vref B
-		0b1000100110,	// Vref C
-		0b0111000010	// Vref D
+		ENA_default,
+		ENB_default,
+		ENC_default,
+		END_default,	// ENABLE A, B, C, D
+		V_SELECTA_default,
+		V_SELECTB_default,
+		V_SELECTC_default,
+		V_SELECTD_default, 	// V_SELECT A, B, C, D
+		VrefA_default,
+		VrefB_default,
+		VrefC_default,
+		VrefD_default
 };
 
 
@@ -35,7 +41,6 @@ void PMIC_PowerOn(void){
 	}
 
 	// SYSEN 레지스터 set, Enable ABCD 레지스터 set
-	//TODO 이 부분 그림으로 그리기
 	*pmic_data = (0x01 << SYSEN) |
 			(pmic_handler.BUCK_USE_A << ENA) |
 			(pmic_handler.BUCK_USE_B << ENB) |

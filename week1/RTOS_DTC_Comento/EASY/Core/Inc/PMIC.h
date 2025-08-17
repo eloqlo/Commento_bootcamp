@@ -63,12 +63,38 @@ enum PMIC_UV_BITS {BUCKD_UV=4, BUCKC_UV, BUCKB_UV, BUCKA_UV};
 enum PMIC_OC_BITS {BUCKD_OC=4, BUCKC_OC, BUCKB_OC, BUCKA_OC};
 enum PMIC_TEMP_BIT {PMIC_HIGH_TEMP_SHUTDOWN};
 enum PMIC_SYS_BITS {
-	SYSEN=7, ENA=5, ENB=4, ENC=3, END=2,
+	SYSEN=7,
+	ENA=5,
+	ENB=4,
+	ENC=3,
+	END=2,
 	VOUT_SELECTx=7,
-	VREFx_HIGH_0=0, VREFx_HIGH_1=1,
-	VREFx_LOW_0=0, VREFx_LOW_1=1, VREFx_LOW_2=2, VREFx_LOW_3=3,
-	VREFx_LOW_4=4, VREFx_LOW_5=5, VREFx_LOW_6=6, VREFx_LOW_7=7,
+	VREFx_HIGH_0=0,
+	VREFx_HIGH_1=1,
+	VREFx_LOW_0=0,
+	VREFx_LOW_1=1,
+	VREFx_LOW_2=2,
+	VREFx_LOW_3=3,
+	VREFx_LOW_4=4,
+	VREFx_LOW_5=5,
+	VREFx_LOW_6=6,
+	VREFx_LOW_7=7,
 };
+enum PMIC_SYS_DEFAULT_VALUES {
+	ENA_default = 1,
+	ENB_default = 1,
+	ENC_default = 1,
+	END_default=1,
+	V_SELECTA_default=0,
+	V_SELECTB_default=0,
+	V_SELECTC_default=0,
+	V_SELECTD_default=1,
+	VrefA_default = 0b1000100110,
+	VrefB_default = 0b1000100110,
+	VrefC_default = 0b1000100110,
+	VrefD_default = 0b0111000010
+};
+
 
 typedef struct{
 	union {

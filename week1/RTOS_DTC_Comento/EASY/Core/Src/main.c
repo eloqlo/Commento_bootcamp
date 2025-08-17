@@ -243,7 +243,7 @@ int main(void)
   EEPROM_ReadDTC_DMA(DTC_Table_OC_C, EEPROM_DTC_ADDR_OC_C);
   EEPROM_ReadDTC_DMA(DTC_Table_OC_D, EEPROM_DTC_ADDR_OC_D);
   EEPROM_ReadDTC_DMA(DTC_Table_TEMP, EEPROM_DTC_ADDR_TEMP);
-
+  can_transmit_dtc_flag = 0;
 
   /* USER CODE END 2 */
 

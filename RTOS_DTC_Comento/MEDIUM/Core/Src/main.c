@@ -31,14 +31,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct {
-	uint16_t DTC_SAE;		// DTC SAE표준 (제동이므로 샤시 C)
-	uint8_t DTC_FTB;		// DTC Failure Type byte
-	uint8_t DTC_Status;		// DTC Status byte
 
-	uint8_t active;
-	char Description[50];
-} DTC_Table_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -167,7 +160,6 @@ uint8_t eeprom_read_dtc_flag = 0;
 uint8_t can_transmit_dtc_flag = 0;
 uint8_t uart_transmit_flag = 0;
 
-uint8_t CAN_Counter = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -352,26 +344,15 @@ int main(void)
 	  }
 
 	  // [3] CAN interrupt DTC 송출
-	  	  if (can_transmit_dtc_flag == 1){
-	  		  can_transmit_dtc_flag = 0;
-	  		  CAN_Send_DTC_Table(DTC_Table_UV_A);
-	  		  CAN_Send_DTC_Table(DTC_Table_UV_B);
-	  		  CAN_Send_DTC_Table(DTC_Table_UV_C);
-	  		  CAN_Send_DTC_Table(DTC_Table_UV_D);
-	  		  CAN_Send_DTC_Table(DTC_Table_OV_A);
-	  		  CAN_Send_DTC_Table(DTC_Table_OV_B);
-	  		  CAN_Send_DTC_Table(DTC_Table_OV_C);
-	  		  CAN_Send_DTC_Table(DTC_Table_OV_D);
-	  		  CAN_Send_DTC_Table(DTC_Table_OC_A);
-	  		  CAN_Send_DTC_Table(DTC_Table_OC_B);
-	  		  CAN_Send_DTC_Table(DTC_Table_OC_C);
-	  		  CAN_Send_DTC_Table(DTC_Table_OC_D);
-	  		  CAN_Send_DTC_Table(DTC_Table_TEMP);
-	  	  }
-	  	  if (CAN_Counter == 13){
-	  		  uart_transmit_flag = 1;
-	  		  CAN_Counter = 0;
-	  	  }
+	  if (can_transmit_dtc_flag == 1){
+		  can_transmit_dtc_flag = 0;
+
+		  // TODO [1] CAN Trasnmitter 로 DTC들 송출.
+
+
+		  // TODO [2] CAN Interrupt Callback에서 uart_transmit_flag SET 하기.
+
+	  }
 
 	  // [4] UART 매 주기 시스템 동작 이상 없음 송출
 	  if (uart_transmit_flag == 1){
@@ -387,44 +368,6 @@ int main(void)
 	  }
 	  /* USER CODE END 3 */
   }
-}
-
-/* NEW 25.08.24 - CAN으로 DTC data를 송출 */
-void CAN_Send_DTC_Table(DTC_Table_t DTC_Table){
-	CAN_TxHeaderTypeDef canTxHeader;
-	uint32_t TxMailbox;
-	uint8_t TxData[8] = {0};
-
-	canTxHeader.StdId = 0x7E8;				// 응답 ID
-	canTxHeader.IDE = CAN_ID_STD;			// 11bit ID
-	canTxHeader.RTR = CAN_RTR_DATA;			// data frame
-	canTxHeader.DLC = 8;					// Data 길이: 8bytes
-
-	// Send DTC
-	TxData[0] = 0x06;	// UDS 데이터 길이
-	TxData[1] = 0x22;	// RDBI + Positive Response
-	TxData[2] = (DTC_Table.DTC_SAE >> 8) & 0xFF;	// DTC SAE High
-	TxData[3] = DTC_Table.DTC_SAE & 0xFF;	// DTC SAE Low
-	TxData[4] = DTC_Table.DTC_FTB;
-	TxData[5] = DTC_Table.DTC_Status;
-
-	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, TxData, &TxMailbox);
-}
-
-
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	CAN_Counter++;
-}
-
-void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	CAN_Counter++;
-}
-
-void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
-{
-	CAN_Counter++;
 }
 
 uint8_t IsDTCActive(void){

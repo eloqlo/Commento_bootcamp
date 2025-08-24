@@ -106,20 +106,20 @@ void PMIC_Init(void){
 // PMIC Fault Data 처리
 Data fault_data;
 
-uint8_t UVOV_flag = 0;
-void PMIC_ReadUVOV(void){
+volatile uint8_t UVOV_flag = 0;
+inline void PMIC_ReadUVOV(void){
 	uint8_t UVOV_flag = 1;
 	HAL_I2C_Mem_Read_DMA(&hi2c1, PMIC_DEV_ADDR, PMIC_FAULT_STATUS1_REG, I2C_MEMADD_SIZE_8BIT, &fault_data.data, 1);
 }
 
-uint8_t OC_flag = 0;
-void PMIC_ReadOC(void){
+volatile uint8_t OC_flag = 0;
+inline void PMIC_ReadOC(void){
 	uint8_t OC_flag = 1;
 	HAL_I2C_Mem_Read_DMA(&hi2c1, PMIC_DEV_ADDR, PMIC_FAULT_STATUS2_REG, I2C_MEMADD_SIZE_8BIT, &fault_data.data, 1);
 }
 
-uint8_t TEMP_flag = 0;
-void PMIC_ReadTEMP(void){
+volatile uint8_t TEMP_flag = 0;
+inline void PMIC_ReadTEMP(void){
 	uint8_t TEMP_flag = 1;
 	HAL_I2C_Mem_Read_DMA(&hi2c1, PMIC_DEV_ADDR, PMIC_FAULT_STATUS3_REG, I2C_MEMADD_SIZE_8BIT, &fault_data.data, 1);
 }

@@ -178,7 +178,7 @@ void StartI2CTask(void *argument);
 void StartSPITask(void *argument);
 void StartCANTask(void *argument);
 void StartUARTTask(void *argument);
-
+uint8_t IsDTCActive(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -218,15 +218,13 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
-  MX_CAN1_Init();
+  MX_CAN1_Init();		// HAL_CAN_INIT() 수행.
   MX_I2C1_Init();
 //  MX_I2C2_Init();
   MX_SPI1_Init();
 //  MX_SPI2_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-
-
   PMIC_Init();			// PMIC 전원 켜기 + PMIC 벅 켜기 + 벅 레귤레이터 출력전압 컨트롤
 
   EEPROM_ReadDTC_DMA(DTC_Table_UV_A, EEPROM_DTC_ADDR_UV_A);		// 부팅 이전에 저장된 DTC 정보 복구
@@ -242,8 +240,11 @@ int main(void)
   EEPROM_ReadDTC_DMA(DTC_Table_OC_C, EEPROM_DTC_ADDR_OC_C);
   EEPROM_ReadDTC_DMA(DTC_Table_OC_D, EEPROM_DTC_ADDR_OC_D);
   EEPROM_ReadDTC_DMA(DTC_Table_TEMP, EEPROM_DTC_ADDR_TEMP);
-  can_transmit_dtc_flag = 0;
 
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_TX_MAILBOX_EMPTY);	// Tx Mailbox가 비어서 새로운 전송 가능할 때 IRQ !
+
+  can_transmit_dtc_flag = 0;
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -273,6 +274,10 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
+  /*
+   * osThreadNew() 를 통해, 새로운 TASK를 생성한다.
+   * osThreadNew() 의 매개변수는 [실행할 TASK loop], [?], [(이름/스택크기/우선순위) 구조체 주소] 이다.
+   *  */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
@@ -297,7 +302,7 @@ int main(void)
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
-  osKernelStart();
+  osKernelStart();		// 스케쥴러 시작.
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -308,7 +313,7 @@ int main(void)
 	  /* USER CODE BEGIN 3 */
 
 	  // [1] PMIC 레지스터를 읽어오고, 이에 맞춰 DTC를 업데이트 해준다.
-	  if (pmic_read_fault_flag == 1){
+	  if (pmic_read_fault_flag == 1) {
 		  pmic_read_fault_flag = 0;
 
 		  // OC, OV, UV, TEMP 레지스터의 Fault Data 를 읽어온다.
@@ -344,6 +349,7 @@ int main(void)
 
 		  // TODO [1] CAN Trasnmitter 로 DTC들 송출.
 
+
 		  // TODO [2] CAN Interrupt Callback에서 uart_transmit_flag SET 하기.
 
 	  }
@@ -352,10 +358,7 @@ int main(void)
 	  if (uart_transmit_flag == 1){
 		  uart_transmit_flag = 0;
 		  char uart_comment[50];
-		  if (DTC_Table_UV_A.active + DTC_Table_UV_B.active + DTC_Table_UV_C.active + DTC_Table_UV_D.active +
-				  DTC_Table_OV_A.active + DTC_Table_OV_B.active + DTC_Table_OV_C.active + DTC_Table_OV_D.active +
-				  DTC_Table_OC_A.active + DTC_Table_OC_B.active + DTC_Table_OC_C.active + DTC_Table_OC_D.active +
-				  DTC_Table_TEMP.active){
+		  if (IsDTCActive()) {
 			  snprintf(uart_comment, sizeof(uart_comment), "Fault Detected in Brake System");
 		  }
 		  else {
@@ -365,6 +368,13 @@ int main(void)
 	  }
 	  /* USER CODE END 3 */
   }
+}
+
+uint8_t IsDTCActive(void){
+	return DTC_Table_UV_A.active | DTC_Table_UV_B.active | DTC_Table_UV_C.active | DTC_Table_UV_D.active |
+			  DTC_Table_OV_A.active | DTC_Table_OV_B.active | DTC_Table_OV_C.active | DTC_Table_OV_D.active |
+			  DTC_Table_OC_A.active | DTC_Table_OC_B.active | DTC_Table_OC_C.active | DTC_Table_OC_D.active |
+			  DTC_Table_TEMP.active;
 }
 
 /**

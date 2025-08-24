@@ -390,14 +390,14 @@ int main(void)
   CanQueueHandle = osMessageQueueNew(8, 8, &CanQueue_attributes);  // CAN 수신 큐 생성
 
   /* Create the thread(s) */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-  I2CTaskHandle = osThreadNew(StartI2CTask, NULL, &I2CTask_attributes);
-  SPITaskHandle = osThreadNew(StartSPITask, NULL, &SPITask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);     // osThreadNew() 를 통해, StartDefaultTask를 defaultTask_attributes라는 속성으로 생성
+  I2CTaskHandle = osThreadNew(StartI2CTask, NULL, &I2CTask_attributes);                 //    defaultTask_attributes -> TASK이름, TASK간 우선순위, TASK 스택 사이즈
+  SPITaskHandle = osThreadNew(StartSPITask, NULL, &SPITask_attributes);                 
   CANTaskHandle = osThreadNew(StartCANTask, NULL, &CANTask_attributes);
   UARTTaskHandle = osThreadNew(StartUARTTask, NULL, &UARTTask_attributes);
 
   /* Start scheduler */
-  osKernelStart();
+  osKernelStart();          // 스케쥴러 시작
 
   /* Infinite loop */
   while (1)

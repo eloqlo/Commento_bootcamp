@@ -1,5 +1,0 @@
-../Core/Src/EEPROM.c:11:6:EEPROM_ReadDTC_DMA	16	static
-../Core/Src/EEPROM.c:22:6:EEPROM_WriteEnable	16	static
-../Core/Src/EEPROM.c:29:6:EEPROM_WriteDTC_DMA	16	static
-../Core/Src/EEPROM.c:42:6:HAL_SPI_RxCpltCallback	16	static
-../Core/Src/EEPROM.c:51:6:HAL_SPI_TxCpltCallback	16	static

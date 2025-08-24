@@ -31,7 +31,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-extern eeprom_read_counter;
+typedef struct {
+	uint16_t DTC_SAE;		// DTC SAE표준 (제동이므로 샤시 C)
+	uint8_t DTC_FTB;		// DTC Failure Type byte
+	uint8_t DTC_Status;		// DTC Status byte
+
+	uint8_t active;
+	char Description[50];
+} DTC_Table_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -135,28 +143,32 @@ UART_HandleTypeDef huart4;
 //  .name = "CommMutexHandle"
 //};
 /* USER CODE BEGIN PV */
-DTC_Table_t DTC_Table_UV_A = { 0x0000, "Brake BuckA Under Voltage Fault", 0};
-DTC_Table_t DTC_Table_OV_A = { 0x0001, "Brake BuckA Over Voltage Fault", 0};
-DTC_Table_t DTC_Table_OC_A = { 0x0002, "Brake BuckA Over Current Fault", 0};
+extern eeprom_read_counter;
 
-DTC_Table_t DTC_Table_UV_B = { 0x0003, "Brake BuckB Under Voltage Fault", 0};
-DTC_Table_t DTC_Table_OV_B = { 0x0004, "Brake BuckB Over Voltage Fault", 0};
-DTC_Table_t DTC_Table_OC_B = { 0x0005, "Brake BuckB Over Current Fault", 0};
+DTC_Table_t DTC_Table_UV_A = { 0x5120, 0x00, 0b00000000,0, "Brake BuckA Under Voltage Fault"};	// DTC : SAE(2byte), FTB(1byte), Status_Byte(1byte)
+DTC_Table_t DTC_Table_OV_A = { 0x5121, 0x00, 0x00,0, "Brake BuckA Over Voltage Fault"};
+DTC_Table_t DTC_Table_OC_A = { 0x5122, 0x00, 0x00,0, "Brake BuckA Over Current Fault"};
 
-DTC_Table_t DTC_Table_UV_C = { 0x0006, "Brake BuckC Under Voltage Fault", 0};
-DTC_Table_t DTC_Table_OV_C = { 0x0007, "Brake BuckC Over Voltage Fault", 0};
-DTC_Table_t DTC_Table_OC_C = { 0x0008, "Brake BuckC Over Current Fault", 0};
+DTC_Table_t DTC_Table_UV_B = { 0x5123, 0x00, 0x00,0, "Brake BuckB Under Voltage Fault"};
+DTC_Table_t DTC_Table_OV_B = { 0x5124, 0x00, 0x00,0, "Brake BuckB Over Voltage Fault"};
+DTC_Table_t DTC_Table_OC_B = { 0x5125, 0x00, 0x00,0, "Brake BuckB Over Current Fault"};
 
-DTC_Table_t DTC_Table_UV_D = { 0x0006, "Brake BuckC Under Voltage Fault", 0};
-DTC_Table_t DTC_Table_OV_D = { 0x0007, "Brake BuckC Over Voltage Fault", 0};
-DTC_Table_t DTC_Table_OC_D = { 0x0008, "Brake BuckC Over Current Fault", 0};
-DTC_Table_t DTC_Table_TEMP = { 0x0009, "Brake High Temperature Fault", 0};
+DTC_Table_t DTC_Table_UV_C = { 0x5126, 0x00, 0x00,0, "Brake BuckC Under Voltage Fault"};
+DTC_Table_t DTC_Table_OV_C = { 0x5127, 0x00, 0x00,0, "Brake BuckC Over Voltage Fault"};
+DTC_Table_t DTC_Table_OC_C = { 0x5128, 0x00, 0x00,0, "Brake BuckC Over Current Fault"};
+
+DTC_Table_t DTC_Table_UV_D = { 0x5126, 0x00, 0x00,0, "Brake BuckC Under Voltage Fault"};
+DTC_Table_t DTC_Table_OV_D = { 0x5127, 0x00, 0x00,0, "Brake BuckC Over Voltage Fault"};
+DTC_Table_t DTC_Table_OC_D = { 0x5128, 0x00, 0x00,0, "Brake BuckC Over Current Fault"};
+DTC_Table_t DTC_Table_TEMP = { 0x5129, 0x00, 0x00,0, "Brake High Temperature Fault"};
 
 
 uint8_t pmic_read_fault_flag = 1;
 uint8_t eeprom_read_dtc_flag = 0;
 uint8_t can_transmit_dtc_flag = 0;
 uint8_t uart_transmit_flag = 0;
+
+uint8_t CAN_Counter = 0;
 
 /* USER CODE END PV */
 
@@ -178,19 +190,16 @@ void StartCANTask(void *argument);
 void StartUARTTask(void *argument);
 uint8_t Is_DTC_Fault_Active(void);
 void CAN_Send_DTC_Table(DTC_Table_t DTC_Table);
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-typedef union{
-	DTC_Table_t dt;
-	uint8_t data_8byte[sizeof(dt)];
-}MessageUnion_t;
 
-CAN_TxHeaderTypeDef canTxHeader;
-uint8_t canTx0Data[8];
 /* USER CODE END 0 */
 
 /**
@@ -250,6 +259,10 @@ int main(void)
   EEPROM_ReadDTC_DMA(DTC_Table_OC_C, EEPROM_DTC_ADDR_OC_C);
   EEPROM_ReadDTC_DMA(DTC_Table_OC_D, EEPROM_DTC_ADDR_OC_D);
   EEPROM_ReadDTC_DMA(DTC_Table_TEMP, EEPROM_DTC_ADDR_TEMP);
+
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_TX_MAILBOX_EMPTY);	// Tx Mailbox가 비어서 새로운 전송 가능할 때 IRQ !
+
   can_transmit_dtc_flag = 0;
 
   /* USER CODE END 2 */
@@ -296,7 +309,6 @@ int main(void)
 	  // [3] CAN interrupt DTC 송출
 	  if (can_transmit_dtc_flag == 1){
 		  can_transmit_dtc_flag = 0;
-
 		  // [1] CAN Trasnmitter 로 DTC들 송출.
 		  CAN_Send_DTC_Table(DTC_Table_UV_A);
 		  CAN_Send_DTC_Table(DTC_Table_UV_B);
@@ -311,6 +323,10 @@ int main(void)
 		  CAN_Send_DTC_Table(DTC_Table_OC_C);
 		  CAN_Send_DTC_Table(DTC_Table_OC_D);
 		  CAN_Send_DTC_Table(DTC_Table_TEMP);
+	  }
+	  if (CAN_Counter == 13){
+		  uart_transmit_flag = 1;
+		  CAN_Counter = 0;
 	  }
 
 	  // [4] UART 매 주기 시스템 동작 이상 없음 송출
@@ -329,14 +345,48 @@ int main(void)
   }
 }
 
-void CAN_Send_DTC_Table(DTC_Table_t DTC_Table){
-	canTxHeader.StdId = 0x123;		// 메시지 ID
-	canTxHeader.RTR = CAN_RTR_DATA;	// ?
-	canTxHeader.IDE = CAN_ID_STD;			// 11bit ID
-	canTxHeader.DLC = 0;
 
-	// TODO
+
+
+/* NEW 25.08.24 - CAN으로 DTC data를 송출 */
+void CAN_Send_DTC_Table(DTC_Table_t DTC_Table){
+	CAN_TxHeaderTypeDef canTxHeader;
+	uint32_t TxMailbox;
+	uint8_t TxData[8] = {0};
+
+	canTxHeader.StdId = 0x7E8;				// 응답 ID
+	canTxHeader.IDE = CAN_ID_STD;			// 11bit ID
+	canTxHeader.RTR = CAN_RTR_DATA;			// data frame
+	canTxHeader.DLC = 8;					// Data 길이: 8bytes
+
+	// Send DTC
+	TxData[0] = 0x06;	// UDS 데이터 길이
+	TxData[1] = 0x22;	// RDBI + Positive Response
+	TxData[2] = (DTC_Table.DTC_SAE >> 8) & 0xFF;	// DTC SAE High
+	TxData[3] = DTC_Table.DTC_SAE & 0xFF;	// DTC SAE Low
+	TxData[4] = DTC_Table.DTC_FTB;
+	TxData[5] = DTC_Table.DTC_Status;
+
+	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, TxData, &TxMailbox);
 }
+
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_Counter++;
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_Counter++;
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_Counter++;
+}
+
+
 
 uint8_t Is_DTC_Fault_Active(void){
 	return DTC_Table_UV_A.active + DTC_Table_UV_B.active + DTC_Table_UV_C.active + DTC_Table_UV_D.active +

@@ -59,11 +59,7 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
-typedef struct {
-	unsigned int DTC_Code;
-	char Description[50];
-	unsigned char active;
-} DTC_Table_t;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

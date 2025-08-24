@@ -1,8 +1,0 @@
-../Core/Src/PMIC.c:29:6:PMIC_PowerOn	3
-../Core/Src/PMIC.c:53:6:PMIC_BUCKx_Vout	4
-../Core/Src/PMIC.c:80:6:PMIC_Init	5
-../Core/Src/PMIC.c:105:6:PMIC_ReadUVOV	1
-../Core/Src/PMIC.c:111:6:PMIC_ReadOC	1
-../Core/Src/PMIC.c:117:6:PMIC_ReadTEMP	1
-../Core/Src/PMIC.c:128:6:PMIC_DTC_Update	44
-../Core/Src/PMIC.c:225:6:HAL_I2C_MemRxCpltCallback	16

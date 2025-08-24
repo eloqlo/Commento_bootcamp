@@ -1,5 +1,0 @@
-../Core/Src/EEPROM.c:11:6:EEPROM_ReadDTC_DMA	1
-../Core/Src/EEPROM.c:22:6:EEPROM_WriteEnable	1
-../Core/Src/EEPROM.c:29:6:EEPROM_WriteDTC_DMA	1
-../Core/Src/EEPROM.c:42:6:HAL_SPI_RxCpltCallback	2
-../Core/Src/EEPROM.c:51:6:HAL_SPI_TxCpltCallback	1

@@ -858,13 +858,13 @@ void Process_CAN_Response(uint8_t *data) {
   // OBD2 0x43: Read DTCs
   if (data[1] == 0x43) {
     if (DTC_Table.active) {
-      TxData[0] = 0x03; 
+      TxData[0] = 0x03;
       TxData[1] = 0x43;
       TxData[2] = (DTC_Table.DTC_Code >> 8) & 0xFF;
       TxData[3] = DTC_Table.DTC_Code & 0xFF;
     } else {
-      TxData[0] = 0x01; 
-      TxData[1] = 0x43; 
+      TxData[0] = 0x01;
+      TxData[1] = 0x43;
       TxData[2] = 0x00;
     }
   }
@@ -872,7 +872,8 @@ void Process_CAN_Response(uint8_t *data) {
   else if (data[1] == 0x04) {
     DTC_Table.active = 0;
     EEPROM_WriteDTC();
-    TxData[0] = 0x01; TxData[1] = 0x44; // 응답
+    TxData[0] = 0x01; 
+    TxData[1] = 0x44; // 응답
   }
   // UDS 0x19: Read DTCs
   else if (data[1] == 0x19) {

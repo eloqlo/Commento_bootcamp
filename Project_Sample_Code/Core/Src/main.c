@@ -900,16 +900,6 @@ void Process_CAN_Response(uint8_t *data) {
 /* USER CODE END PFP */
 
 
-
-
-
-
-
-
-
-
-
-
 /* USER CODE BEGIN 5 */
 void StartI2CTask(void *argument) {
   uint8_t faultReg;

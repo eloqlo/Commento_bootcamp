@@ -90,50 +90,52 @@ DMA_HandleTypeDef hdma_spi2_tx;
 UART_HandleTypeDef huart4;
 
 /* Definitions for defaultTask */
-//osThreadId_t defaultTaskHandle;
-//const osThreadAttr_t defaultTask_attributes = {
-//  .name = "defaultTask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-///* Definitions for I2CTask */
-//osThreadId_t I2CTaskHandle;
-//const osThreadAttr_t I2CTask_attributes = {
-//  .name = "I2CTask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-///* Definitions for SPITask */
-//osThreadId_t SPITaskHandle;
-//const osThreadAttr_t SPITask_attributes = {
-//  .name = "SPITask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-///* Definitions for CANTask */
-//osThreadId_t CANTaskHandle;
-//const osThreadAttr_t CANTask_attributes = {
-//  .name = "CANTask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-///* Definitions for UARTTask */
-//osThreadId_t UARTTaskHandle;
-//const osThreadAttr_t UARTTask_attributes = {
-//  .name = "UARTTask",
-//  .stack_size = 128 * 4,
-//  .priority = (osPriority_t) osPriorityNormal,
-//};
-///* Definitions for CanQueue */
-//osMessageQueueId_t CanQueueHandle;
-//const osMessageQueueAttr_t CanQueue_attributes = {
-//  .name = "CanQueue"
-//};
-///* Definitions for CommMutexHandle */
-//osMutexId_t CommMutexHandleHandle;
-//const osMutexAttr_t CommMutexHandle_attributes = {
-//  .name = "CommMutexHandle"
-//};
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for I2CTask */
+osThreadId_t I2CTaskHandle;
+const osThreadAttr_t I2CTask_attributes = {
+  .name = "I2CTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for SPITask */
+osThreadId_t SPITaskHandle;
+const osThreadAttr_t SPITask_attributes = {
+  .name = "SPITask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for CANTask */
+osThreadId_t CANTaskHandle;
+const osThreadAttr_t CANTask_attributes = {
+  .name = "CANTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for UARTTask */
+osThreadId_t UARTTaskHandle;
+const osThreadAttr_t UARTTask_attributes = {
+  .name = "UARTTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for CanQueue */
+osMessageQueueId_t CanQueueHandle;
+const osMessageQueueAttr_t CanQueue_attributes = {
+  .name = "CanQueue"
+};
+/* Definitions for CommMutexHandle */
+osMutexId_t CommMutexHandleHandle;
+const osMutexAttr_t CommMutexHandle_attributes = {
+  .name = "CommMutexHandle"
+};
+
+
 /* USER CODE BEGIN PV */
 DTC_Table_t DTC_Table_UV_A = { 0x0000, "Brake BuckA Under Voltage Fault", 0};
 DTC_Table_t DTC_Table_OV_A = { 0x0001, "Brake BuckA Over Voltage Fault", 0};
@@ -224,9 +226,6 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
-//  // CAN 초기화 후 수신 인터럽트 활성화
-//  HAL_CAN_Start(&hcan1);
-//  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
   PMIC_Init();			// PMIC 전원 켜기 + PMIC 벅 켜기 + 벅 레귤레이터 출력전압 컨트롤
 
@@ -247,6 +246,61 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of CommMutexHandle */
+  CommMutexHandleHandle = osMutexNew(&CommMutexHandle_attributes);
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* creation of CanQueue */
+  CanQueueHandle = osMessageQueueNew (8, 8, &CanQueue_attributes);
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* creation of I2CTask */
+  I2CTaskHandle = osThreadNew(StartI2CTask, NULL, &I2CTask_attributes);
+
+  /* creation of SPITask */
+  SPITaskHandle = osThreadNew(StartSPITask, NULL, &SPITask_attributes);
+
+  /* creation of CANTask */
+  CANTaskHandle = osThreadNew(StartCANTask, NULL, &CANTask_attributes);
+
+  /* creation of UARTTask */
+  UARTTaskHandle = osThreadNew(StartUARTTask, NULL, &UARTTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
@@ -724,13 +778,23 @@ void StartDefaultTask(void *argument)
 /* USER CODE END Header_StartI2CTask */
 void StartI2CTask(void *argument)
 {
-  /* USER CODE BEGIN StartI2CTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartI2CTask */
+	/* USER CODE BEGIN StartI2CTask */
+	/* Infinite loop */
+	uint8_t faultReg;
+	for(;;)
+	{
+		osMutexAcquire(CommMutexHandleHandle, osWaitForever);
+		HAL_I2C_Mem_Read(&hi2c1, PMIC_DEV_ADDR, PMIC_FAULT_STATUS1_REG, I2C_MEMADD_SIZE_8BIT, &faultReg, 1, HAL_MAX_DELAY);
+		if (faultReg & 0x01) {
+			if (DTC_Table.active == 0) {
+				DTC_Table.active = 1;
+//				EEPROM_WriteDTC_DMA(DTC_Table, mem_addr);
+			}
+		}
+		osMutexRelease(CommMutexHandleHandle);
+		osDelay(500);
+	}
+	/* USER CODE END StartI2CTask */
 }
 
 /* USER CODE BEGIN Header_StartSPITask */
@@ -746,7 +810,10 @@ void StartSPITask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  osMutexAcqutire(CommMutexHandleHandle, osWaitForever);
+//	  EEPROM_WriteDTC_DMA(DTC_Table, mem_addr)();
+	  osMutexRelease(CommMutexHandleHandle);
+	  osDelay(5000);
   }
   /* USER CODE END StartSPITask */
 }
@@ -762,9 +829,15 @@ void StartCANTask(void *argument)
 {
   /* USER CODE BEGIN StartCANTask */
   /* Infinite loop */
+  uint8_t rxBuf[8];
   for(;;)
   {
-    osDelay(1);
+    if (osMessageQueueGet(CanQueueHandle, rxBuf, NULL, osWaitForever) == osOK) {
+    	osMutexAcquire(CommMutexHandleHandle, osWaitForever);
+    	Process_CAN_Respopnse(rxBuf);
+    	osMutexRelease(CommMutexHandleHandle);
+    }
+    osDelay(100);
   }
   /* USER CODE END StartCANTask */
 }
@@ -780,10 +853,12 @@ void StartUARTTask(void *argument)
 {
   /* USER CODE BEGIN StartUARTTask */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	const char msg[] = "ECU System Running\r\n";
+	for(;;) {
+		osMutexAcquire(CommMutexHandleHandle, osWaitForever);
+		HAL_UART_Transmit(&huart4, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+		osMutexRelease(CommMutexHandleHandle);
+		osDelay(1000);
   /* USER CODE END StartUARTTask */
 }
 
@@ -800,6 +875,71 @@ void Error_Handler(void)
   {
   }
   /* USER CODE END Error_Handler_Debug */
+}
+
+
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO, &RxHeader, RxData);
+	osMessageQueuePut(CanQueueHandle, RxData, 0, 0);
+}
+
+void Process_CAN_Response(uint8_t *data, DTC_Table_t DTC_Table, uint16_t mem_addr){
+	CAN_TxHeaderTypeDef TxHeader;
+	uint32_t TxMailbox;
+	uint8_t TxData[8] = {0};
+
+	TxHeader.StdId = 0x7E8;		// 응답 ID
+	TxHeader.IDE = CAN_ID_STD;	// msg ID
+	TxHeader.RTR = CAN_RTR_DATA;	// 메시지 Frame
+	TxHeader.DLC = 8;
+
+	// OBD2 0x43 : Read DTCs
+	if (data[1] == 0x43) {
+		if (DTC_Table.active) {
+			TxData[0] = 0x03;
+			TxData[1] = 0x43;
+			TxData[2] = (DTC_Table.DTC_Code >> 8) & 0xFF;
+			TxData[3] = DTC_Table.DTC_Code & 0xFF;
+		} else {
+			TxData[0] = 0x01;
+			TxData[1] = 0x43;
+			TxData[2] = 0x00;
+		}
+	}
+	// OBD2 0x04 : Clear DTCs
+	else if (data[1] == 0x04) {
+		DTC_Table.active = 0;
+		EEPROM_WriteDTC_DMA(DTC_Table, mem_addr);
+		TxData[0] = 0x01;
+		TxData[1] = 0x44;	// 응답
+	}
+	// UDS 0x19 : Read DTCs
+	else if (data[1] == 0x19) {
+		if (DTC_Table.active){
+			TxData[0] = 0x03;
+			TxData[1] = 0x59;
+			TxData[2] = 0x02;
+			TxData[3] = (DTC_Table.DTC_Code >> 8) & 0xFF;
+			TxData[4] = DTC_Table.DTC_Code & 0xFF;
+		} else {
+			TxData[0] = 0x01;
+			TxData[1] = 0x59;
+			TxData[2] = 0x00;
+		}
+	}
+	else if (data[1] == 0x14) {
+		DTC_Table.active = 0;
+		EEPROM_WriteDTC_DMA(DTC_Table, mem_addr);
+		TxData[0] = 0x02;
+		TxData[1] = 0x54;	// 응답
+	}
+	else{
+		/* for misra code */
+	}
+
+	HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 }
 
 #ifdef  USE_FULL_ASSERT
